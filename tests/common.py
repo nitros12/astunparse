@@ -12,6 +12,7 @@ if six.PY3:
 else:
     from lib2to3.pgen2 import tokenize
 
+
 def read_pyfile(filename):
     """Read and return the contents of a Python source file (as a
     string), taking into account the file encoding."""
@@ -24,6 +25,7 @@ def read_pyfile(filename):
         with open(filename, "r") as pyfile:
             source = pyfile.read()
     return source
+
 
 code_parseable_in_all_parser_modes = """\
 (a + b + c) * (d + e + f)
@@ -162,6 +164,7 @@ async def f():
         suite1
 """
 
+
 class AstunparseCommonTestCase:
     # Tests for specific bugs found in earlier versions of unparse
 
@@ -222,7 +225,7 @@ class AstunparseCommonTestCase:
 
     @unittest.skipUnless(six.PY2, "Only works for Python 2")
     def test_min_int27(self):
-        self.check_roundtrip(str(-sys.maxint-1))
+        self.check_roundtrip(str(-sys.maxint - 1))
         self.check_roundtrip("-(%s)" % (sys.maxint + 1))
 
     @unittest.skipUnless(six.PY3, "Only works for Python 3")
@@ -287,6 +290,18 @@ class AstunparseCommonTestCase:
 
     def test_bytes(self):
         self.check_roundtrip("b'123'")
+
+    @unittest.skipIf(sys.version_info < (3, 6), "Not supported < 3.6")
+    def test_formatted_value(self):
+        self.check_roundtrip('f"{value}"')
+        self.check_roundtrip('f"{value!s}"')
+        self.check_roundtrip('f"{value:4}"')
+        self.check_roundtrip('f"{value!s:4}"')
+
+    @unittest.skipIf(sys.version_info < (3, 6), "Not supported < 3.6")
+    def test_dict_with_unpacking(self):
+        self.check_roundtrip("{**x}")
+        self.check_roundtrip("{a: b, **x}")
 
     @unittest.skipIf(sys.version_info < (3, 6), "Not supported < 3.6")
     def test_joined_str(self):

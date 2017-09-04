@@ -64,7 +64,8 @@ class Unparser:
             for t in tree:
                 self.dispatch(t)
             return
-        tree.from_statement = from_statement
+        if tree is not None:
+            tree.from_statement = from_statement
         meth = getattr(self, "_" + tree.__class__.__name__)
         meth(tree)
 
@@ -460,7 +461,7 @@ class Unparser:
 
     format_conversions = {97: 'a', 114: 'r', 115: 's'}
 
-    def _FormattedValue(self, t):
+    def _generic_FormattedValue(self, t):
         # FormattedValue(expr value, int? conversion, expr? format_spec)
         self.write("{")
         self.dispatch(t.value)
@@ -472,9 +473,21 @@ class Unparser:
             self.write(":")
             if isinstance(t.format_spec, ast.Str):
                 self.write(t.format_spec.s)
+            elif isinstance(t.format_spec, ast.JoinedStr):
+                # 3.6.1+ joined string
+                for value in t.format_spec.values:
+                    if isinstance(value, ast.Str):
+                        self.write(value.s)
+                    else:
+                        self.dispatch(value)
             else:
                 self.dispatch(t.format_spec)
         self.write("}")
+
+    def _FormattedValue(self, t):
+        self.write("f'''")
+        self._generic_FormattedValue(t)
+        self.write("'''")
 
     def _JoinedStr(self, t):
         # JoinedStr(expr* values)
@@ -482,6 +495,8 @@ class Unparser:
         for value in t.values:
             if isinstance(value, ast.Str):
                 self.write(value.s)
+            elif isinstance(value, ast.FormattedValue):
+                self._generic_FormattedValue(value)
             else:
                 self.dispatch(value)
         self.write("'''")
@@ -578,9 +593,13 @@ class Unparser:
 
         def write_pair(pair):
             (k, v) = pair
-            self.dispatch(k)
-            self.write(": ")
-            self.dispatch(v)
+            if k is None:
+                self.write("**")
+                self.dispatch(v)
+            else:
+                self.dispatch(k)
+                self.write(": ")
+                self.dispatch(v)
             self.write(",")
         self._indent += 1
         self.fill("")
