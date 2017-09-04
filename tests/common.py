@@ -405,6 +405,20 @@ class AstunparseCommonTestCase:
         self.check_roundtrip(async_function_def)
 
     @unittest.skipIf(sys.version_info < (3, 5), "Not supported < 3.5")
+    def test_await_parens(self):
+        def async_def(expr):
+            return "async def f(): " + expr
+
+        self.check_roundtrip(async_def("await b"))
+        self.check_roundtrip(async_def("await b.c()"))
+        self.check_roundtrip(async_def("await (await b.c).d"))
+        self.check_roundtrip(async_def("await f(await c)"))
+        self.check_roundtrip(async_def("await f((await b).c)"))
+        self.check_roundtrip(async_def("a = await b"))
+        self.check_roundtrip(async_def("a = await (await b)"))
+        self.check_roundtrip(async_def("a = f(await a, await b())"))
+
+    @unittest.skipIf(sys.version_info < (3, 5), "Not supported < 3.5")
     def test_async_for(self):
         self.check_roundtrip(async_for)
 

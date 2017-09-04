@@ -113,7 +113,7 @@ class Unparser:
         for target in t.targets:
             self.dispatch(target)
             self.write(" = ")
-        self.dispatch(t.value)
+        self.dispatch(t.value, from_statement=True)
 
     def _AugAssign(self, t):
         self.fill()
@@ -138,7 +138,7 @@ class Unparser:
         self.fill("return")
         if t.value:
             self.write(" ")
-            self.dispatch(t.value)
+            self.dispatch(t.value)  # prefer `return (await x)`
 
     def _Pass(self, t):
         self.fill("pass")
