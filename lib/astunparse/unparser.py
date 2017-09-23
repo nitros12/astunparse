@@ -12,12 +12,12 @@ from six import StringIO
 INFSTR = "1e" + repr(sys.float_info.max_10_exp + 1)
 
 
-def interleave(inter, f, seq):
+def interleave(inter, f, seq, **kwargs):
     """Call f on each item in seq, calling inter() in between.
     """
     seq = iter(seq)
     try:
-        f(next(seq))
+        f(next(seq), **kwargs)
     except StopIteration:
         pass
     else:
@@ -58,14 +58,14 @@ class Unparser:
         "Decrease the indentation level."
         self._indent -= 1
 
-    def dispatch(self, tree, from_statement=False):
+    def dispatch(self, tree, donot_paren=False):
         "Dispatcher function, dispatching tree type T to method _T."
         if isinstance(tree, list):
             for t in tree:
                 self.dispatch(t)
             return
         if tree is not None:
-            tree.from_statement = from_statement
+            tree.donot_paren = donot_paren
         meth = getattr(self, "_" + tree.__class__.__name__)
         meth(tree)
 
@@ -90,7 +90,7 @@ class Unparser:
     # stmt
     def _Expr(self, tree):
         self.fill()
-        self.dispatch(tree.value, from_statement=True)
+        self.dispatch(tree.value, donot_paren=True)
 
     def _Import(self, t):
         self.fill("import ")
@@ -113,7 +113,7 @@ class Unparser:
         for target in t.targets:
             self.dispatch(target)
             self.write(" = ")
-        self.dispatch(t.value, from_statement=True)
+        self.dispatch(t.value, donot_paren=True)
 
     def _AugAssign(self, t):
         self.fill()
@@ -195,23 +195,23 @@ class Unparser:
         interleave(lambda: self.write(", "), self.write, t.names)
 
     def _Yield(self, t):
-        if not t.from_statement:
+        if not t.donot_paren:
             self.write("(")
         self.write("yield")
         if t.value:
             self.write(" ")
             self.dispatch(t.value)
-        if not t.from_statement:
+        if not t.donot_paren:
             self.write(")")
 
     def _YieldFrom(self, t):
-        if not t.from_statement:
+        if not t.donot_paren:
             self.write("(")
         self.write("yield from")
         if t.value:
             self.write(" ")
             self.dispatch(t.value)
-        if not t.from_statement:
+        if not t.donot_paren:
             self.write(")")
 
     def _Raise(self, t):
@@ -529,7 +529,7 @@ class Unparser:
 
     def _List(self, t):
         self.write("[")
-        interleave(lambda: self.write(", "), self.dispatch, t.elts)
+        interleave(lambda: self.write(", "), self.dispatch, t.elts, donot_paren=True)
         self.write("]")
 
     def _ListComp(self, t):
@@ -614,7 +614,7 @@ class Unparser:
             self.dispatch(elt)
             self.write(",")
         else:
-            interleave(lambda: self.write(", "), self.dispatch, t.elts)
+            interleave(lambda: self.write(", "), self.dispatch, t.elts, donot_paren=True)
         self.write(")")
 
     unop = {"Invert": "~", "Not": "not", "UAdd": "+", "USub": "-"}
@@ -686,13 +686,13 @@ class Unparser:
                 self.write(", ")
             else:
                 comma = True
-            self.dispatch(e, from_statement=True)
+            self.dispatch(e, donot_paren=True)
         for e in t.keywords:
             if comma:
                 self.write(", ")
             else:
                 comma = True
-            self.dispatch(e, from_statement=True)
+            self.dispatch(e, donot_paren=True)
         if sys.version_info[:2] < (3, 5):
             if t.starargs:
                 if comma:
@@ -713,7 +713,7 @@ class Unparser:
     def _Subscript(self, t):
         self.dispatch(t.value)
         self.write("[")
-        self.dispatch(t.slice)
+        self.dispatch(t.slice, donot_paren=True)
         self.write("]")
 
     def _Starred(self, t):
@@ -725,20 +725,20 @@ class Unparser:
         self.write("...")
 
     def _Index(self, t):
-        self.dispatch(t.value)
+        self.dispatch(t.value, donot_paren=True)
 
     def _Slice(self, t):
         if t.lower:
-            self.dispatch(t.lower)
+            self.dispatch(t.lower, donot_paren=True)
         self.write(":")
         if t.upper:
-            self.dispatch(t.upper)
+            self.dispatch(t.upper, donot_paren=True)
         if t.step:
             self.write(":")
-            self.dispatch(t.step)
+            self.dispatch(t.step, donot_paren=True)
 
     def _ExtSlice(self, t):
-        interleave(lambda: self.write(', '), self.dispatch, t.dims)
+        interleave(lambda: self.write(', '), self.dispatch, t.dims, donot_paren=True)
 
     # argument
     def _arg(self, t):
@@ -839,13 +839,13 @@ class Unparser:
             self.dispatch(t.optional_vars)
 
     def _Await(self, t):
-        if not t.from_statement:
+        if not t.donot_paren:
             self.write("(")
         self.write("await")
         if t.value:
             self.write(" ")
             self.dispatch(t.value)
-        if not t.from_statement:
+        if not t.donot_paren:
             self.write(")")
 
 
