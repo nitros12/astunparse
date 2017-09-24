@@ -1,11 +1,12 @@
 # coding: utf-8
 from __future__ import absolute_import
+
 from six.moves import cStringIO
-from .unparser import Unparser
+
 from .printer import Printer
+from .unparser import Unparser
 
-
-__version__ = '1.5.0'
+__version__ = '1.5.0-noparen'
 
 
 def unparse(tree):

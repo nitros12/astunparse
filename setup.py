@@ -29,13 +29,13 @@ def read_version():
 
 
 setup(
-    name='astunparse_noparen',
+    name='astunparse-noparen',
     version=read_version(),
     description='An AST unparser for Python',
     long_description=readme + '\n\n' + history,
     maintainer='Simon Percivall',
     maintainer_email='percivall@gmail.com',
-    url='https://github.com/simonpercivall/astunparse',
+    url='https://github.com/nitros12/astunparse',
     packages=find_packages('lib'),
     package_dir={'': 'lib'},
     include_package_data=True,
