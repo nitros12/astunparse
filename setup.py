@@ -21,7 +21,7 @@ if sys.version_info < (2, 7):
 
 
 def read_version():
-    with open(os.path.join('lib', 'astunparse', '__init__.py')) as f:
+    with open(os.path.join('lib', 'astunparse_noparen', '__init__.py')) as f:
         m = re.search(r'''__version__\s*=\s*['"]([^'"]*)['"]''', f.read())
         if m:
             return m.group(1)

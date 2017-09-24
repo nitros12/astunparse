@@ -1,13 +1,16 @@
 import ast
 import re
 import sys
+
+from tests.common import AstunparseCommonTestCase
+
+import astunparse_noparen
+
 if sys.version_info < (2, 7):
     import unittest2 as unittest
 else:
     import unittest
 
-import astunparse
-from tests.common import AstunparseCommonTestCase
 
 class DumpTestCase(AstunparseCommonTestCase, unittest.TestCase):
 
@@ -19,6 +22,6 @@ class DumpTestCase(AstunparseCommonTestCase, unittest.TestCase):
 
     def check_roundtrip(self, code1, filename="internal", mode="exec"):
         ast_ = compile(str(code1), filename, mode, ast.PyCF_ONLY_AST)
-        dump1 = astunparse.dump(ast_)
+        dump1 = astunparse_noparen.dump(ast_)
         dump2 = ast.dump(ast_)
         self.assertASTEqual(dump1, dump2)
