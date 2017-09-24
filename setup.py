@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import sys
 import os
 import re
-from setuptools import setup, find_packages
+import sys
+
+from setuptools import find_packages, setup
 
 readme = open('README.rst').read()
 history = open('HISTORY.rst').read().replace('.. :changelog:', '')
@@ -13,9 +14,11 @@ def read_reqs(name):
     with open(os.path.join(os.path.dirname(__file__), name)) as f:
         return [line for line in f.read().split('\n') if line and not line.strip().startswith('#')]
 
+
 tests_require = []  # mostly handled by tox
 if sys.version_info < (2, 7):
     tests_require.append("unittest2 == 0.5.1")  # except this
+
 
 def read_version():
     with open(os.path.join('lib', 'astunparse', '__init__.py')) as f:
@@ -26,7 +29,7 @@ def read_version():
 
 
 setup(
-    name='astunparse_noparen',
+    name='astunparse',
     version=read_version(),
     description='An AST unparser for Python',
     long_description=readme + '\n\n' + history,
