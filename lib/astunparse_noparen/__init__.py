@@ -6,7 +6,7 @@ from six.moves import cStringIO
 from .printer import Printer
 from .unparser import Unparser
 
-__version__ = '1.5.0-noparen'
+__version__ = '1.5.2'
 
 
 def unparse(tree):

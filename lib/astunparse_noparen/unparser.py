@@ -60,14 +60,14 @@ class Unparser:
         "Decrease the indentation level."
         self._indent -= 1
 
-    def dispatch(self, tree, donot_paren=True):
+    def dispatch(self, tree, requires_paren=False):
         "Dispatcher function, dispatching tree type T to method _T."
         if isinstance(tree, list):
             for t in tree:
                 self.dispatch(t)
             return
         if tree is not None:
-            tree.donot_paren = donot_paren
+            tree.requires_paren = donot_paren
         meth = getattr(self, "_" + tree.__class__.__name__)
         meth(tree)
 
@@ -87,7 +87,7 @@ class Unparser:
             self.dispatch(stmt)
 
     def _Expression(self, tree):
-        self.dispatch(tree.body, donot_paren=True)
+        self.dispatch(tree.body, requires_paren=False)
 
     # stmt
     def _Expr(self, tree):
@@ -197,23 +197,23 @@ class Unparser:
         interleave(lambda: self.write(", "), self.write, t.names)
 
     def _Yield(self, t):
-        if not t.donot_paren:
+        if t.requires_paren:
             self.write("(")
         self.write("yield")
         if t.value:
             self.write(" ")
-            self.dispatch(t.value, donot_paren=False)
-        if not t.donot_paren:
+            self.dispatch(t.value, requires_paren=True)
+        if t.requires_paren:
             self.write(")")
 
     def _YieldFrom(self, t):
-        if not t.donot_paren:
+        if t.requires_paren:
             self.write("(")
         self.write("yield from")
         if t.value:
             self.write(" ")
-            self.dispatch(t.value, donot_paren=False)
-        if not t.donot_paren:
+            self.dispatch(t.value, requires_paren=True)
+        if t.requires_paren:
             self.write(")")
 
     def _Raise(self, t):
@@ -390,9 +390,9 @@ class Unparser:
 
     def _If(self, t):
         self.fill("if ")
-        self.dispatch(t.test)
+        self.dispatch(t.test, requires_paren=True)
         self.enter()
-        self.dispatch(t.body, donot_paren=False)
+        self.dispatch(t.body)
         self.leave()
         # collapse nested ifs into equivalent elifs.
         while (t.orelse and len(t.orelse) == 1 and
@@ -576,13 +576,15 @@ class Unparser:
             self.dispatch(if_clause)
 
     def _IfExp(self, t):
-        self.write("(")
+        if t.requires_paren:
+            self.write("(")
         self.dispatch(t.body)
         self.write(" if ")
         self.dispatch(t.test)
         self.write(" else ")
         self.dispatch(t.orelse)
-        self.write(")")
+        if t.requires_paren:
+            self.write(")")
 
     def _Set(self, t):
         assert(t.elts)  # should be at least one element
@@ -644,11 +646,13 @@ class Unparser:
                     "MatMult": "@"}
 
     def _BinOp(self, t):
-        self.write("(")
+        if t.requires_paren:
+            self.write("(")
         self.dispatch(t.left)
         self.write(" " + self.binop[t.op.__class__.__name__] + " ")
         self.dispatch(t.right)
-        self.write(")")
+        if t.requires_paren:
+            self.write(")")
 
     cmpops = {"Eq": "==", "NotEq": "!=", "Lt": "<", "LtE": "<=", "Gt": ">", "GtE": ">=",
               "Is": "is", "IsNot": "is not", "In": "in", "NotIn": "not in"}
@@ -670,7 +674,7 @@ class Unparser:
         self.write(")")
 
     def _Attribute(self, t):
-        self.dispatch(t.value, donot_paren=False)
+        self.dispatch(t.value, requires_paren=True)
         # Special case: 3.__abs__() is a syntax error, so if t.value
         # is an integer literal then we need to either parenthesize
         # it or add an extra space to get 3 .__abs__().
@@ -826,7 +830,7 @@ class Unparser:
         self.write("lambda ")
         self.dispatch(t.args)
         self.write(": ")
-        self.dispatch(t.body, donot_paren=False)
+        self.dispatch(t.body, requires_paren=True)
         self.write(")")
 
     def _alias(self, t):
@@ -841,13 +845,13 @@ class Unparser:
             self.dispatch(t.optional_vars)
 
     def _Await(self, t):
-        if not t.donot_paren:
+        if t.requires_paren:
             self.write("(")
         self.write("await")
         if t.value:
             self.write(" ")
-            self.dispatch(t.value, donot_paren=False)
-        if not t.donot_paren:
+            self.dispatch(t.value, requires_paren=True)
+        if t.requires_paren:
             self.write(")")
 
 
