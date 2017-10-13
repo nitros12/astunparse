@@ -67,7 +67,7 @@ class Unparser:
                 self.dispatch(t)
             return
         if tree is not None:
-            tree.requires_paren = donot_paren
+            tree.requires_paren = requires_paren
         meth = getattr(self, "_" + tree.__class__.__name__)
         meth(tree)
 
@@ -634,10 +634,10 @@ class Unparser:
             # -7j is different from -(7j).  (The first has real part 0.0, the second
             # has real part -0.0.)
             self.write("(")
-            self.dispatch(t.operand)
+            self.dispatch(t.operand, requires_paren=True)
             self.write(")")
         else:
-            self.dispatch(t.operand)
+            self.dispatch(t.operand, requires_paren=True)
         self.write(")")
 
     binop = {"Add": "+", "Sub": "-", "Mult": "*", "Div": "/", "Mod": "%",
@@ -648,9 +648,9 @@ class Unparser:
     def _BinOp(self, t):
         if t.requires_paren:
             self.write("(")
-        self.dispatch(t.left)
+        self.dispatch(t.left, requires_paren=True)
         self.write(" " + self.binop[t.op.__class__.__name__] + " ")
-        self.dispatch(t.right)
+        self.dispatch(t.right, requires_paren=True)
         if t.requires_paren:
             self.write(")")
 
@@ -659,10 +659,10 @@ class Unparser:
 
     def _Compare(self, t):
         self.write("(")
-        self.dispatch(t.left)
+        self.dispatch(t.left, requires_paren=True)
         for o, e in zip(t.ops, t.comparators):
             self.write(" " + self.cmpops[o.__class__.__name__] + " ")
-            self.dispatch(e)
+            self.dispatch(e, requires_paren=True)
         self.write(")")
 
     boolops = {ast.And: 'and', ast.Or: 'or'}
@@ -794,7 +794,7 @@ class Unparser:
                     first = False
                 else:
                     self.write(", ")
-                self.dispatch(a),
+                self.dispatch(a)
                 if d:
                     self.write("=")
                     self.dispatch(d)
