@@ -5,6 +5,7 @@ import ast
 import os
 import sys
 import tokenize
+from functools import partial
 
 import six
 from six import StringIO
@@ -64,7 +65,7 @@ class Unparser:
         "Dispatcher function, dispatching tree type T to method _T."
         if isinstance(tree, list):
             for t in tree:
-                self.dispatch(t)
+                self.dispatch(t, requires_paren=requires_paren)
             return
         if tree is not None:
             tree.requires_paren = requires_paren
@@ -390,7 +391,7 @@ class Unparser:
 
     def _If(self, t):
         self.fill("if ")
-        self.dispatch(t.test, requires_paren=True)
+        self.dispatch(t.test)
         self.enter()
         self.dispatch(t.body)
         self.leave()
@@ -658,20 +659,24 @@ class Unparser:
               "Is": "is", "IsNot": "is not", "In": "in", "NotIn": "not in"}
 
     def _Compare(self, t):
-        self.write("(")
+        if t.requires_paren:
+            self.write("(")
         self.dispatch(t.left, requires_paren=True)
         for o, e in zip(t.ops, t.comparators):
             self.write(" " + self.cmpops[o.__class__.__name__] + " ")
             self.dispatch(e, requires_paren=True)
-        self.write(")")
+        if t.requires_paren:
+            self.write(")")
 
     boolops = {ast.And: 'and', ast.Or: 'or'}
 
     def _BoolOp(self, t):
-        self.write("(")
+        if t.requires_paren:
+            self.write("(")
         s = " %s " % self.boolops[t.op.__class__]
-        interleave(lambda: self.write(s), self.dispatch, t.values)
-        self.write(")")
+        interleave(lambda: self.write(s), partial(self.dispatch, requires_paren=True), t.values)
+        if t.requires_paren:
+            self.write(")")
 
     def _Attribute(self, t):
         self.dispatch(t.value, requires_paren=True)
